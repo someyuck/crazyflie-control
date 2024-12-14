@@ -1,0 +1,11 @@
+name: crazyflie
+channels:
+  - defaults
+dependencies:
+  - matplotlib
+  - numpy
+  - python=3.12
+  - ros-jazzy-geometry-msgs
+  - ros-jazzy-rclpy
+  - scipy
+prefix: /home/someyuck/miniconda3/envs/crazyflie
