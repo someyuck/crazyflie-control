@@ -21,10 +21,10 @@ def control_drone(uri: str, id: int, log_file: pathlib.Path):
 
 
 if __name__ == "__main__":
-    filepath = pathlib.Path(f"log_{id}.txt").resolve()
     threads: list[threading.Thread] = []
 
     for id, uri in enumerate(URIS):
+        filepath = pathlib.Path(f"log_{id}.txt").resolve()
         thread = threading.Thread(target=control_drone, args=(uri, id, filepath))
         threads.append(thread)
         thread.start()
