@@ -25,6 +25,20 @@ class Drone:
 
         self.scf: SyncCrazyflie | None = None
 
+    def set_param_async(self, groupstr: str, namestr: str, value):
+        """call this function with the param's default value at the end to reset"""
+
+        def param_stab_est_callback(name, value):
+            print(f"param {name} = {value}")
+
+        cf = self.scf.cf
+        full_name = groupstr + "." + namestr
+        self.scf.cf.param.add_update_callback(
+            group=groupstr, name=namestr, cb=param_stab_est_callback
+        )
+        time.sleep(1)
+        cf.param.set_value(full_name, value)
+
     def sync_log(self):
         def _sync_log():
             with SyncLogger(self.scf, self.lg_stab) as logger:
@@ -52,6 +66,9 @@ class Drone:
         with SyncCrazyflie(uri, cf=Crazyflie(rw_cache="./cache")) as self.scf:
             fn(**kwags)
 
+            self.set_param_async("stabilizer", "estimator", 2)
+            self.set_param_async("stabilizer", "estimator", 1)
+
 
 def simple_connect():
     print("Yeah, I'm connected! :D")
@@ -65,4 +82,4 @@ if __name__ == "__main__":
     d = Drone(uri)
     # d.execute(simple_connect)
     # d.sync_log()
-    d.async_log()
+    # d.async_log()
