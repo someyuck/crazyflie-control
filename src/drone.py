@@ -1,20 +1,22 @@
 import logging
 import time
+from threading import Event
 
 import cflib.crtp
 from cflib.crazyflie import Crazyflie
 from cflib.crazyflie.syncCrazyflie import SyncCrazyflie
-
 from cflib.crazyflie.log import LogConfig
 from cflib.crazyflie.syncLogger import SyncLogger
-
+from cflib.utils import uri_helper
 
 # Only output errors from the logging framework
 logging.basicConfig(level=logging.ERROR)
 
 
 class Drone:
-    def __init__(self, uri: str = "radio://0/80/2M/E7E7E7E7E7"):
+    def __init__(
+        self, uri: str = uri_helper.uri_from_env(default="radio://0/80/2M/E7E7E7E7E7")
+    ):
         self.uri = uri
         cflib.crtp.init_drivers()
 
@@ -25,19 +27,42 @@ class Drone:
 
         self.scf: SyncCrazyflie | None = None
 
-    def set_param_async(self, groupstr: str, namestr: str, value):
+        self.default_height = 0.5
+        self.box_limit = 0.5
+
+        self.deck_attached_event = Event()
+
+    def set_param_async(self, groupstr: str, namestr: str, callback=None, value=None):
         """call this function with the param's default value at the end to reset"""
 
-        def param_stab_est_callback(name, value):
+        def param_stab_log_callback(name, value):
             print(f"param {name} = {value}")
 
-        cf = self.scf.cf
-        full_name = groupstr + "." + namestr
         self.scf.cf.param.add_update_callback(
-            group=groupstr, name=namestr, cb=param_stab_est_callback
+            group=groupstr,
+            name=namestr,
+            cb=callback if callback is not None else param_stab_log_callback,
         )
         time.sleep(1)
-        cf.param.set_value(full_name, value)
+
+        if value is not None:
+            full_name = groupstr + "." + namestr
+            self.scf.cf.param.set_value(full_name, value)
+
+    def set_flow_deck_checker(self):
+        def param_deck_flow_cb(_, value_str: str):
+            value = int(value_str)
+            # print(value)
+            if value:
+                # TODO: check
+                self.deck_attached_event.set()
+                print("Deck is attached!")
+            else:
+                print("Deck is NOT attached!")
+
+        self.set_param_async(
+            groupstr="deck", namestr="bcFlow2", callback=param_deck_flow_cb, value=None
+        )
 
     def sync_log(self):
         def _sync_log():
@@ -62,12 +87,17 @@ class Drone:
         time.sleep(5)
         self.lg_stab.stop()
 
-    def execute(self, fn, **kwags):
+    def execute(self, fn, check_flow_deck: bool = True, **kwags):
         with SyncCrazyflie(uri, cf=Crazyflie(rw_cache="./cache")) as self.scf:
+            if check_flow_deck:
+                self.set_flow_deck_checker()
+                if not self.deck_attached_event.wait(timeout=5):
+                    raise RuntimeError("No flow deck detected!")
+
             fn(**kwags)
 
-            self.set_param_async("stabilizer", "estimator", 2)
-            self.set_param_async("stabilizer", "estimator", 1)
+            # self.set_param_async("stabilizer", "estimator", 2)
+            # self.set_param_async("stabilizer", "estimator", 1)
 
 
 def simple_connect():
@@ -78,7 +108,7 @@ def simple_connect():
 
 if __name__ == "__main__":
     # URI to the Crazyflie to connect to
-    uri = "radio://0/80/2M/E7E7E7E7E7"
+    uri = uri_helper.uri_from_env(default="radio://0/80/2M/E7E7E7E7E7")
     d = Drone(uri)
     # d.execute(simple_connect)
     # d.sync_log()
