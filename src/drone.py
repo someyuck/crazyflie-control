@@ -97,34 +97,42 @@ class Drone:
 
         self.execute(_sync_log)
 
-    def async_log(self):
-        def _async_log_callback(timestamp: int, data: str, logconf: LogConfig):
-            print(f"[{timestamp}][{logconf.name}]: {data}")
+    def _async_log_callback(self, timestamp: int, data: str, logconf: LogConfig):
+        print(f"[{timestamp}][{logconf.name}]: {data}")
 
+    def async_log(self):
         self.scf.cf.log.add_config(self.logconf)
-        self.logconf.data_received_cb.add_callback(_async_log_callback)
+        self.logconf.data_received_cb.add_callback(self._async_log_callback)
         self.logconf.start()
         time.sleep(5)
         self.logconf.stop()
 
-    def execute(self, fn, check_flow_deck: bool = True, **kwags):
+    def execute(self, fn, check_flow_deck: bool = True, log: bool = True, **kwags):
         with SyncCrazyflie(uri, cf=Crazyflie(rw_cache="./cache")) as self.scf:
+            if log:
+                self.scf.cf.log.add_config(self.logconf)
+                self.logconf.data_received_cb.add_callback(self._async_log_callback)
+
             if check_flow_deck:
                 self.set_flow_deck_checker()
                 if not self.deck_attached_event.wait(timeout=5):
                     raise RuntimeError("No flow deck detected!")
 
+            if log:
+                self.logconf.start()
             fn(**kwags)
+            if log:
+                self.logconf.start()
 
             # self.set_param_async("stabilizer", "estimator", 2)
             # self.set_param_async("stabilizer", "estimator", 1)
 
-    def move(self, fn, **kwags):
+    def move(self, fn, log: bool = True, **kwags):
         def _move(**kwags):
             with MotionCommander(self.scf, default_height=self.default_height) as mc:
                 fn(mc, **kwags)
 
-        self.execute(_move, **kwags)
+        self.execute(fn=_move, log=log, **kwags)
 
 
 def simple_connect():
