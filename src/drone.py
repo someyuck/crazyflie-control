@@ -25,6 +25,19 @@ class Drone:
 
         self.scf: SyncCrazyflie | None = None
 
+    def sync_log(self):
+        def _sync_log():
+            with SyncLogger(self.scf, self.lg_stab) as logger:
+                for log_entry in logger:
+                    timestamp = log_entry[0]
+                    data = log_entry[1]
+                    logconf_name = log_entry[2]
+
+                    print(f"[{timestamp}][{logconf_name}]: {data}")
+                    break
+
+        self.execute(_sync_log)
+
     def execute(self, fn, **kwags):
         with SyncCrazyflie(uri, cf=Crazyflie(rw_cache="./cache")) as self.scf:
             fn(**kwags)
@@ -36,20 +49,9 @@ def simple_connect():
     print("Now I will disconnect :'(")
 
 
-def simple_log(scf: SyncCrazyflie, logconf: LogConfig):
-    with SyncLogger(scf, logconf) as logger:
-        for log_entry in logger:
-            timestamp = log_entry[0]
-            data = log_entry[1]
-            logconf_name = log_entry[2]
-
-            print(f"[{timestamp}][{logconf_name}]: {data}")
-            break
-
-
 if __name__ == "__main__":
     # URI to the Crazyflie to connect to
     uri = "radio://0/80/2M/E7E7E7E7E7"
     d = Drone(uri)
     # d.execute(simple_connect)
-    d.execute(simple_log, d.scf, d.lg_stab)
+    d.sync_log()
