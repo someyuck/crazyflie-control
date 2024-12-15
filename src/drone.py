@@ -4,6 +4,7 @@ from threading import Event
 
 import colorama
 from colorama import Fore, Style
+
 colorama.init()
 
 import cflib.crtp
@@ -96,13 +97,23 @@ class Drone:
 
                     # TODO: can also set position props here
 
-                    print(Fore.GREEN + f"[{timestamp}][{logconf_name}]: {data}" + Style.RESET_ALL)
+                    print(
+                        Fore.GREEN
+                        + f"[{timestamp}][{logconf_name}]: {data}"
+                        + Style.RESET_ALL
+                    )
                     break
 
         self.execute(_sync_log)
 
     def _async_log_callback(self, timestamp: int, data: str, logconf: LogConfig):
-        print(Fore.GREEN + f"[{timestamp}][{logconf.name}]: {data}" + Style.RESET_ALL)
+        if self.log_file is not None:
+            with open(self.log_file, "a") as outfile:
+                print(f"[{timestamp}][{logconf.name}]: {data}", file=outfile)
+        else:
+            print(
+                Fore.GREEN + f"[{timestamp}][{logconf.name}]: {data}" + Style.RESET_ALL
+            )
 
     def async_log_simple(self):
         self.scf.cf.log.add_config(self.logconf)
