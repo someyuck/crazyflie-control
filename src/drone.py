@@ -23,7 +23,7 @@ class Drone:
     """
     Basic class to control a CrazyFlie drone. To move the drone,
     write a function taking in a MotionCommander instance, and call
-    `move()` on it.
+    `fly()` on it.
     """
 
     def __init__(
