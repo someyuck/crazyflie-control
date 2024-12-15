@@ -43,7 +43,7 @@ def simple_log(scf, logconf):
             data = log_entry[1]
             logconf_name = log_entry[2]
 
-            print("[%d][%s]: %s" % (timestamp, logconf_name, data))
+            print(f"[{timestamp}][{logconf_name}]: {data}")
             break
 
 
