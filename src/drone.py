@@ -15,6 +15,8 @@ from cflib.crazyflie.syncLogger import SyncLogger
 from cflib.positioning.motion_commander import MotionCommander
 from cflib.utils import uri_helper
 
+COLORS = [Fore.BLUE, Fore.RED, Fore.GREEN, Fore.BLACK]
+
 
 class Drone:
     """
@@ -26,12 +28,14 @@ class Drone:
     def __init__(
         self,
         uri: str = uri_helper.uri_from_env(default="radio://0/80/2M/E7E7E7E7E7"),
+        id: int = 0,
         log_file: str | None = None,
     ):
         self.uri = uri
-        cflib.crtp.init_drivers()
-
+        self.id = id
         self.log_file = log_file
+
+        cflib.crtp.init_drivers()
 
         # Only output errors from the logging framework
         logging.basicConfig(level=logging.ERROR)
@@ -57,9 +61,13 @@ class Drone:
         def param_stab_log_callback(name, value):
             if self.log_file is not None:
                 with open(self.log_file, "a") as outfile:
-                    print(f"param {name} = {value}", file=outfile)
+                    print(f"[#{self.id}] param {name} = {value}", file=outfile)
             else:
-                print(Fore.GREEN + f"param {name} = {value}" + Style.RESET_ALL)
+                print(
+                    COLORS[self.id]
+                    + f"[#{self.id}] param {name} = {value}"
+                    + Style.RESET_ALL
+                )
 
         self.scf.cf.param.add_update_callback(
             group=groupstr,
@@ -75,13 +83,20 @@ class Drone:
     def set_flow_deck_checker(self):
         def param_deck_flow_cb(_, value_str: str):
             value = int(value_str)
-            # print(value)
             if value:
                 # TODO: check
                 self.deck_attached_event.set()
-                print(Fore.GREEN + "Deck is attached!" + Style.RESET_ALL)
+                print(
+                    COLORS[self.id]
+                    + f"[#{self.id}] Deck is attached!"
+                    + Style.RESET_ALL
+                )
             else:
-                print(Fore.RED + "Deck is NOT attached!" + Style.RESET_ALL)
+                print(
+                    COLORS[self.id]
+                    + f"[#{self.id}] Deck is NOT attached!"
+                    + Style.RESET_ALL
+                )
 
         self.set_param_async(
             groupstr="deck", namestr="bcFlow2", callback=param_deck_flow_cb, value=None
@@ -98,8 +113,8 @@ class Drone:
                     # TODO: can also set position props here
 
                     print(
-                        Fore.GREEN
-                        + f"[{timestamp}][{logconf_name}]: {data}"
+                        COLORS[self.id]
+                        + f"[#{self.id}] [{timestamp}][{logconf_name}]: {data}"
                         + Style.RESET_ALL
                     )
                     break
@@ -109,10 +124,14 @@ class Drone:
     def _async_log_callback(self, timestamp: int, data: str, logconf: LogConfig):
         if self.log_file is not None:
             with open(self.log_file, "a") as outfile:
-                print(f"[{timestamp}][{logconf.name}]: {data}", file=outfile)
+                print(
+                    f"[#{self.id}] [{timestamp}][{logconf.name}]: {data}", file=outfile
+                )
         else:
             print(
-                Fore.GREEN + f"[{timestamp}][{logconf.name}]: {data}" + Style.RESET_ALL
+                COLORS[self.id]
+                + f"[#{self.id}] [{timestamp}][{logconf.name}]: {data}"
+                + Style.RESET_ALL
             )
 
     def async_log_simple(self):
@@ -131,7 +150,7 @@ class Drone:
             if check_flow_deck:
                 self.set_flow_deck_checker()
                 if not self.deck_attached_event.wait(timeout=5):
-                    raise RuntimeError("No flow deck detected!")
+                    raise RuntimeError(f"[#{self.id}] No flow deck detected!")
 
             if log:
                 self.logconf.start()
@@ -164,7 +183,7 @@ def take_off_simple(mc: MotionCommander):
 if __name__ == "__main__":
     # URI to the Crazyflie to connect to
     uri = uri_helper.uri_from_env(default="radio://0/80/2M/E7E7E7E7E7")
-    d = Drone(uri)
+    d = Drone(uri=uri, id=0)
     # d.execute(simple_connect)
     # d.sync_log_simple()
     # d.async_log_simple()
