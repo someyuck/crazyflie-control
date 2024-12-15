@@ -6,4 +6,5 @@
 - [x] add logging while flying
 - [x] add colours while logging
 - [ ] add and test shm code
-- [ ] add multi drone code
+- [ ] add and test multi drone code
+- [ ] add documentation
