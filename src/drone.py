@@ -22,15 +22,22 @@ class Drone:
     """
 
     def __init__(
-        self, uri: str = uri_helper.uri_from_env(default="radio://0/80/2M/E7E7E7E7E7")
+        self,
+        uri: str = uri_helper.uri_from_env(default="radio://0/80/2M/E7E7E7E7E7"),
+        log_file: str | None = None,
     ):
         self.uri = uri
         cflib.crtp.init_drivers()
 
-        self.lg_stab = LogConfig(name="Stabilizer", period_in_ms=10)
-        self.lg_stab.add_variable("stabilizer.roll", "float")
-        self.lg_stab.add_variable("stabilizer.pitch", "float")
-        self.lg_stab.add_variable("stabilizer.yaw", "float")
+        self.log_file = log_file
+
+        self.logconf = LogConfig(name="Stabilizer", period_in_ms=10)
+        self.logconf.add_variable("stateEstimate.x", "float")
+        self.logconf.add_variable("stateEstimate.y", "float")
+        self.logconf.add_variable("stateEstimate.z", "float")
+        self.logconf.add_variable("stabilizer.roll", "float")
+        self.logconf.add_variable("stabilizer.pitch", "float")
+        self.logconf.add_variable("stabilizer.yaw", "float")
 
         self.scf: SyncCrazyflie | None = None
 
@@ -43,7 +50,11 @@ class Drone:
         """call this function with the param's default value at the end to reset"""
 
         def param_stab_log_callback(name, value):
-            print(f"param {name} = {value}")
+            if self.log_file is not None:
+                with open(self.log_file, "a") as outfile:
+                    print(f"param {name} = {value}", file=outfile)
+            else:
+                print(f"param {name} = {value}")
 
         self.scf.cf.param.add_update_callback(
             group=groupstr,
@@ -73,11 +84,13 @@ class Drone:
 
     def sync_log(self):
         def _sync_log():
-            with SyncLogger(self.scf, self.lg_stab) as logger:
+            with SyncLogger(self.scf, self.logconf) as logger:
                 for log_entry in logger:
                     timestamp = log_entry[0]
                     data = log_entry[1]
                     logconf_name = log_entry[2]
+
+                    # TODO: can also set position props here
 
                     print(f"[{timestamp}][{logconf_name}]: {data}")
                     break
@@ -88,11 +101,11 @@ class Drone:
         def _async_log_callback(timestamp: int, data: str, logconf: LogConfig):
             print(f"[{timestamp}][{logconf.name}]: {data}")
 
-        self.scf.cf.log.add_config(self.lg_stab)
-        self.lg_stab.data_received_cb.add_callback(_async_log_callback)
-        self.lg_stab.start()
+        self.scf.cf.log.add_config(self.logconf)
+        self.logconf.data_received_cb.add_callback(_async_log_callback)
+        self.logconf.start()
         time.sleep(5)
-        self.lg_stab.stop()
+        self.logconf.stop()
 
     def execute(self, fn, check_flow_deck: bool = True, **kwags):
         with SyncCrazyflie(uri, cf=Crazyflie(rw_cache="./cache")) as self.scf:
