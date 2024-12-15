@@ -10,9 +10,6 @@ from cflib.crazyflie.syncLogger import SyncLogger
 from cflib.positioning.motion_commander import MotionCommander
 from cflib.utils import uri_helper
 
-# Only output errors from the logging framework
-logging.basicConfig(level=logging.ERROR)
-
 
 class Drone:
     """
@@ -30,6 +27,9 @@ class Drone:
         cflib.crtp.init_drivers()
 
         self.log_file = log_file
+
+        # Only output errors from the logging framework
+        logging.basicConfig(level=logging.ERROR)
 
         self.logconf = LogConfig(name="Stabilizer", period_in_ms=10)
         self.logconf.add_variable("stateEstimate.x", "float")
@@ -82,7 +82,7 @@ class Drone:
             groupstr="deck", namestr="bcFlow2", callback=param_deck_flow_cb, value=None
         )
 
-    def sync_log(self):
+    def sync_log_simple(self):
         def _sync_log():
             with SyncLogger(self.scf, self.logconf) as logger:
                 for log_entry in logger:
@@ -100,7 +100,7 @@ class Drone:
     def _async_log_callback(self, timestamp: int, data: str, logconf: LogConfig):
         print(f"[{timestamp}][{logconf.name}]: {data}")
 
-    def async_log(self):
+    def async_log_simple(self):
         self.scf.cf.log.add_config(self.logconf)
         self.logconf.data_received_cb.add_callback(self._async_log_callback)
         self.logconf.start()
@@ -127,12 +127,12 @@ class Drone:
             # self.set_param_async("stabilizer", "estimator", 2)
             # self.set_param_async("stabilizer", "estimator", 1)
 
-    def move(self, fn, log: bool = True, **kwags):
-        def _move(**kwags):
+    def fly(self, fn, log: bool = True, **kwags):
+        def _fly(**kwags):
             with MotionCommander(self.scf, default_height=self.default_height) as mc:
                 fn(mc, **kwags)
 
-        self.execute(fn=_move, log=log, **kwags)
+        self.execute(fn=_fly, log=log, **kwags)
 
 
 def simple_connect():
@@ -151,6 +151,6 @@ if __name__ == "__main__":
     uri = uri_helper.uri_from_env(default="radio://0/80/2M/E7E7E7E7E7")
     d = Drone(uri)
     # d.execute(simple_connect)
-    # d.sync_log()
-    # d.async_log()
-    d.move(take_off_simple)
+    # d.sync_log_simple()
+    # d.async_log_simple()
+    d.fly(take_off_simple)
