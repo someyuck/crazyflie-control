@@ -7,6 +7,7 @@ from cflib.crazyflie import Crazyflie
 from cflib.crazyflie.syncCrazyflie import SyncCrazyflie
 from cflib.crazyflie.log import LogConfig
 from cflib.crazyflie.syncLogger import SyncLogger
+from cflib.positioning.motion_commander import MotionCommander
 from cflib.utils import uri_helper
 
 # Only output errors from the logging framework
@@ -14,6 +15,12 @@ logging.basicConfig(level=logging.ERROR)
 
 
 class Drone:
+    """
+    Basic class to control a CrazyFlie drone. To move the drone,
+    write a function taking in a MotionCommander instance, and call
+    `move()` on it.
+    """
+
     def __init__(
         self, uri: str = uri_helper.uri_from_env(default="radio://0/80/2M/E7E7E7E7E7")
     ):
@@ -99,11 +106,23 @@ class Drone:
             # self.set_param_async("stabilizer", "estimator", 2)
             # self.set_param_async("stabilizer", "estimator", 1)
 
+    def move(self, fn, **kwags):
+        def _move(**kwags):
+            with MotionCommander(self.scf, default_height=self.default_height) as mc:
+                fn(mc, **kwags)
+
+        self.execute(_move, **kwags)
+
 
 def simple_connect():
     print("Yeah, I'm connected! :D")
     time.sleep(3)
     print("Now I will disconnect :'(")
+
+
+def take_off_simple(mc: MotionCommander):
+    time.sleep(3)
+    mc.stop()
 
 
 if __name__ == "__main__":
@@ -113,3 +132,4 @@ if __name__ == "__main__":
     # d.execute(simple_connect)
     # d.sync_log()
     # d.async_log()
+    d.move(take_off_simple)
