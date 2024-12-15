@@ -108,7 +108,7 @@ class Drone:
         self.logconf.stop()
 
     def execute(self, fn, check_flow_deck: bool = True, log: bool = True, **kwags):
-        with SyncCrazyflie(uri, cf=Crazyflie(rw_cache="./cache")) as self.scf:
+        with SyncCrazyflie(self.uri, cf=Crazyflie(rw_cache="./cache")) as self.scf:
             if log:
                 self.scf.cf.log.add_config(self.logconf)
                 self.logconf.data_received_cb.add_callback(self._async_log_callback)
