@@ -1,6 +1,7 @@
 import logging
 import time
 from threading import Event
+import pathlib
 
 import colorama
 from colorama import Fore, Style
@@ -29,11 +30,11 @@ class Drone:
         self,
         uri: str = uri_helper.uri_from_env(default="radio://0/80/2M/E7E7E7E7E7"),
         id: int = 0,
-        log_file: str | None = None,
+        log_file: pathlib.Path | None = None,
     ):
-        self.uri = uri
-        self.id = id
-        self.log_file = log_file
+        self.uri: str = uri
+        self.id: int = id
+        self.log_file: pathlib.Path | None = log_file
 
         cflib.crtp.init_drivers()
 
