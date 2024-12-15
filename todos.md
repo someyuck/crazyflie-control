@@ -4,6 +4,6 @@
 - [x] refactor to use as a drone object (class)
 - [x] add motion code
 - [x] add logging while flying
-- [ ] add colours while logging
+- [x] add colours while logging
 - [ ] add and test shm code
 - [ ] add multi drone code
