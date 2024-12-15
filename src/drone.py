@@ -2,6 +2,10 @@ import logging
 import time
 from threading import Event
 
+import colorama
+from colorama import Fore, Style
+colorama.init()
+
 import cflib.crtp
 from cflib.crazyflie import Crazyflie
 from cflib.crazyflie.syncCrazyflie import SyncCrazyflie
@@ -54,7 +58,7 @@ class Drone:
                 with open(self.log_file, "a") as outfile:
                     print(f"param {name} = {value}", file=outfile)
             else:
-                print(f"param {name} = {value}")
+                print(Fore.GREEN + f"param {name} = {value}" + Style.RESET_ALL)
 
         self.scf.cf.param.add_update_callback(
             group=groupstr,
@@ -74,9 +78,9 @@ class Drone:
             if value:
                 # TODO: check
                 self.deck_attached_event.set()
-                print("Deck is attached!")
+                print(Fore.GREEN + "Deck is attached!" + Style.RESET_ALL)
             else:
-                print("Deck is NOT attached!")
+                print(Fore.RED + "Deck is NOT attached!" + Style.RESET_ALL)
 
         self.set_param_async(
             groupstr="deck", namestr="bcFlow2", callback=param_deck_flow_cb, value=None
@@ -92,13 +96,13 @@ class Drone:
 
                     # TODO: can also set position props here
 
-                    print(f"[{timestamp}][{logconf_name}]: {data}")
+                    print(Fore.GREEN + f"[{timestamp}][{logconf_name}]: {data}" + Style.RESET_ALL)
                     break
 
         self.execute(_sync_log)
 
     def _async_log_callback(self, timestamp: int, data: str, logconf: LogConfig):
-        print(f"[{timestamp}][{logconf.name}]: {data}")
+        print(Fore.GREEN + f"[{timestamp}][{logconf.name}]: {data}" + Style.RESET_ALL)
 
     def async_log_simple(self):
         self.scf.cf.log.add_config(self.logconf)
