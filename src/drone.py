@@ -38,6 +38,16 @@ class Drone:
 
         self.execute(_sync_log)
 
+    def async_log(self):
+        def _async_log_callback(timestamp: int, data: str, logconf: LogConfig):
+            print(f"[{timestamp}][{logconf.name}]: {data}")
+
+        self.scf.cf.log.add_config(self.lg_stab)
+        self.lg_stab.data_received_cb.add_callback(_async_log_callback)
+        self.lg_stab.start()
+        time.sleep(5)
+        self.lg_stab.stop()
+
     def execute(self, fn, **kwags):
         with SyncCrazyflie(uri, cf=Crazyflie(rw_cache="./cache")) as self.scf:
             fn(**kwags)
@@ -54,4 +64,5 @@ if __name__ == "__main__":
     uri = "radio://0/80/2M/E7E7E7E7E7"
     d = Drone(uri)
     # d.execute(simple_connect)
-    d.sync_log()
+    # d.sync_log()
+    d.async_log()
