@@ -4,7 +4,7 @@ import time
 from cflib.positioning.motion_commander import MotionCommander
 from cflib.utils import uri_helper
 
-from src.drone import Drone
+from control.drone import Drone
 
 
 def take_off_simple(mc: MotionCommander):
