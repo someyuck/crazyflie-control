@@ -4,7 +4,7 @@ import time
 from cflib.positioning.motion_commander import MotionCommander
 from cflib.utils import uri_helper
 
-from control.drone import Drone
+from src.control.drone import Drone
 
 
 def take_off_simple(mc: MotionCommander):
@@ -102,11 +102,12 @@ def oscillate_sinusoidal(
 
 
 if __name__ == "__main__":
-    uri = uri_helper.uri_from_env(default="radio://0/80/2M/E7E7E7E7E7")
+    uri = uri_helper.uri_from_env(default="radio://0/80/2M/E7E7E7E703")
     d = Drone(uri)
     # d.fly(take_off_simple, log=True)
     # d.fly(move_linear_simple, log=True)
     # d.fly(move_square, log=True)
     # d.fly(move_cube, log=True)
     # d.fly(move_cricle, log=True)
-    d.fly(oscillate_sinusoidal, log=True)
+    # d.fly(oscillate_sinusoidal, log=True)
+    d.sync_log_simple()

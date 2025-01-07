@@ -3,8 +3,8 @@ import threading
 
 from cflib.utils import uri_helper
 
-from control.drone import Drone
-import examples.flying as examples
+from src.control.drone import Drone
+import src.examples.flying as examples
 
 URIS = [
     "radio://0/80/2M/E7E7E7E701",
