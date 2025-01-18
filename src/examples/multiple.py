@@ -26,7 +26,7 @@ if __name__ == "__main__":
     threads: list[threading.Thread] = []
 
     for id, uri in enumerate(URIS):
-        filepath = pathlib.Path(f"log_{id}.txt").resolve()
+        filepath = pathlib.Path(f"logs/log_{id}.txt").resolve()
         thread = threading.Thread(target=control_drone, args=(uri, id, filepath))
         threads.append(thread)
         thread.start()
