@@ -36,6 +36,11 @@ class Drone:
         self.id: int = id
         self.log_file: pathlib.Path | None = log_file
 
+        # clear log file
+        if self.log_file is not None:
+            with open(self.log_file, "w") as outfile:
+                pass
+
         cflib.crtp.init_drivers()
 
         # Only output errors from the logging framework
